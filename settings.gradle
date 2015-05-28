@@ -1,0 +1,34 @@
+import static groovy.io.FileType.DIRECTORIES
+import static groovy.io.FileVisitResult.SKIP_SUBTREE
+import static java.io.File.separator as FS
+
+def skipDirs = ~/^(build|\..*|src|out|gradle)/
+
+def preDir = {
+  if (skipDirs.matcher(it.name).matches()) {
+    return SKIP_SUBTREE
+  }
+}
+
+def preName = {
+  skipDirs.matcher(it).matches()
+}
+
+def getProjectName(String dir) {
+  def replaceChar = FS == '\\' ? '\\\\' : FS
+  return dir.minus("${rootDir}${FS}").replaceAll(replaceChar, ":")
+}
+
+rootDir.traverse(
+  type: DIRECTORIES,
+  preDir: preDir,
+  excludeNameFilter: preName)
+  { dir->
+    def dstr = dir.toString()
+
+    if (new File("${dstr}${FS}build.gradle").exists()) {
+      include getProjectName(dstr)
+  }
+}
+
+rootProject.name = 'challenges'
